@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings
 from uvicorn import run
 
-from stapi_fastapi_tle.app import factory
+from stapi_fastapi_tle.service.app import factory
 
 
 class RunSettings(BaseSettings):

@@ -1,29 +1,8 @@
-# STAPI FastAPI - Sensor Tasking API with FastAPI
-
-WARNING: The whole [STAPI spec](https://github.com/stapi-spec/stapi-spec) is very much work in progress, so things are
-guaranteed to be not correct.
+# STAPI FastAPI - Sensor Tasking API with FastAPI: TLE Provider Example
 
 NOTE: This repository uses [scripts to rule them all](https://github.com/github/scripts-to-rule-them-all)
 
 ## Usage
-
-STAPI FastAPI provides an `fastapi.APIRouter` which must be included in
-`fastapi.FastAPI` instance.
-
-## Development
-
-It's 2024 and we still need to pick our poison for a 2024 dependency management
-solution. This project picks [poetry][poetry] for now.
-
-The mock backend uses SQLite/Spatialite as storage, therefore the
-`SPATIALITE_LIBRARY_PATH` env var must be set to load the spatialite extension:
-
-```bash
-export DATABASE=sqlite:///order.sqlite
-export SPATIALITE_LIBRARY_PATH=/path/to/mod_spatialite.dylib
-```
-
-Also see [DOCKER.md](./DOCKER.md) for details on docker setup for and deployment.
 
 ### Dev Setup
 
@@ -37,13 +16,20 @@ pytest flags are passed along
 
 ### Dev Server
 
-For dev purposes, [stapi_fastapi.**dev**.py](./stapi_fastapi/__dev__.py) shows
-a minimal demo with `uvicorn` to run the full app. Start it with `./scripts/server`.
-Choose backend with `BACKEND_NAME` env var, defaults to Landsat backend.
+For dev purposes, [stapi_fastapi_tle.\_\_main\_\_.py](./stapi_fastapi_tle/__mains__.py)
+shows a minimal demo with `uvicorn` to run the full app. Start it with
+`./scripts/server`.
 
-### Implementing a backend
+A mock TLE is provided as default, but can be overriden using the `TLE_SRC` env var.
 
-- The test suite assumes the backend can be instantiated without any parameters
-  required by the constructor.
+Try getting opportunities over null island for the next week with [httpie][httpie]:
 
-[poetry]: https://python-poetry.org/
+```bash
+http -v POST localhost:8000/opportunities \
+  product_id=basic_tle \
+  datetime=$(TZ=Zulu date -Iseconds)/$(TZ=Zulu date -Iseconds -v+1w) \
+  "geometry[type]"=Point \
+  "geometry[coordinates]":='[0,0]'
+```
+
+[httpie]: https://httpie.io

@@ -1095,13 +1095,13 @@ full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart (>=0.0.7
 
 [[package]]
 name = "tle-sat"
-version = "0.4.1"
+version = "0.5.0"
 description = "TLE Sat Sim"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "tle_sat-0.4.1-py3-none-any.whl", hash = "sha256:f03cce5d5af84d6c5e8a13e4bf2e9e5e08ab75e9230ba7cb4755d8adb1c30fdb"},
-    {file = "tle_sat-0.4.1.tar.gz", hash = "sha256:81dd2e755ca7902bbfeec2bd87a02337b5bc55fcfe57c2f4739640542762eee6"},
+    {file = "tle_sat-0.5.0-py3-none-any.whl", hash = "sha256:dced1c5cdea7dbd99c52909a800195d3f3926ca9aae895263b6540a695d393aa"},
+    {file = "tle_sat-0.5.0.tar.gz", hash = "sha256:4deca4eb0e1cfba0cf0f5d97dfc79898c0eada0cb36db5af817121cf3bfd249d"},
 ]
 
 [package.dependencies]
@@ -1190,4 +1190,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "c0f4a02a57e6ad91cf5c2c38ad4ae401493ece3c454231f6f7058d8ae4d0231e"
+content-hash = "bc0f8f4f6c59973a41f00403e0c6b65bd1c61590dbacc224d4b0f502a28cb6ee"

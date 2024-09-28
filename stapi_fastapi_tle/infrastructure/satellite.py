@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from shapely import Point
-from tle_sat.satellite import FieldOfView, Satellite, TimeOfInterest
+from tle_sat import FieldOfView, FootprintError, Pass, Satellite, TimeOfInterest
 
 
 class TleDefinedSatellite:
@@ -15,8 +15,10 @@ class TleDefinedSatellite:
 
         passes = self.satellite.passes(toi, target)
 
-        return [
-            (p, self.satellite.footprint(p.t, p.view_angles, self.fov))
-            for p in passes
-            if p.view_angles.off_nadir <= 45
-        ]
+        def geom(p: Pass):
+            try:
+                return self.satellite.footprint(p.t, p.view_angles, self.fov)
+            except FootprintError:
+                return target
+
+        return [(p, geom(p)) for p in passes if p.view_angles.off_nadir <= 45]

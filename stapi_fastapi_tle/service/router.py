@@ -3,29 +3,32 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from geojson_pydantic import FeatureCollection
 from stapi_fastapi.api import StapiException, StapiRouter
 from stapi_fastapi.constants import TYPE_GEOJSON, TYPE_JSON
-from stapi_fastapi.models.opportunity import (
-    Opportunity,
-    OpportunityCollection,
-    OpportunityRequest,
-)
 from stapi_fastapi.models.order import Order
 from stapi_fastapi.models.product import Product, ProductsCollection
 from stapi_fastapi.models.shared import Link
 
 from stapi_fastapi_tle.infrastructure.satellite import TleDefinedSatellite
 from stapi_fastapi_tle.infrastructure.settings import TleSettings
-from stapi_fastapi_tle.service.product import tle_product
+from stapi_fastapi_tle.service.product import (
+    PRODUCTS,
+    OpportunityCollection,
+    OpportunityRequest,
+)
 
 
 def tle_defined_satellite(settings: Annotated[TleSettings, Depends(TleSettings.load)]):
+    """
+    FastAPI dependency to load the TLE defined satellite provider infrastructure
+    """
     return TleDefinedSatellite(settings.src)
 
 
 class StapiTleRouter(StapiRouter):
-    def __init__(self):
-        super().__init__(None, docs_endpoint_name="redoc_ui_html")
+    def __init__(self, **kwargs):
+        super().__init__(None, **kwargs)
 
     async def search_opportunities(
         self,
@@ -39,8 +42,12 @@ class StapiTleRouter(StapiRouter):
             search.geometry.coordinates[0],
         )
 
+        opportunity_model = next(
+            p.opportunity_schema for p in PRODUCTS if p.product.id == search.product_id
+        )
+
         opportunities = [
-            Opportunity(
+            opportunity_model(
                 geometry=p[1].__geo_interface__,
                 properties={
                     "datetime": [p[0].t, p[0].t],
@@ -55,27 +62,42 @@ class StapiTleRouter(StapiRouter):
             for p in passes
         ]
 
-        return JSONResponse(
-            jsonable_encoder(OpportunityCollection(features=opportunities)),
+        rv = JSONResponse(
+            jsonable_encoder(
+                FeatureCollection[opportunity_model](
+                    type="FeatureCollection",
+                    features=opportunities,
+                )
+            ),
             media_type=TYPE_GEOJSON,
         )
+        return rv
 
     # product endpoints, these should be all just done in the StapiRouter class, here
     # just done to show "look, no backend!"
     def products(self, request: Request) -> ProductsCollection:
-        tle_product.links.append(
-            Link(
-                href=str(
-                    request.url_for(
-                        f"{self.NAME_PREFIX}:get-product", product_id=tle_product.id
-                    )
-                ),
-                rel="self",
-                type=TYPE_JSON,
+        products = [
+            p.product.model_copy(
+                update={
+                    "links": [
+                        Link(
+                            href=str(
+                                request.url_for(
+                                    f"{self.NAME_PREFIX}:get-product",
+                                    product_id=p.product.id,
+                                )
+                            ),
+                            rel="self",
+                            type=TYPE_JSON,
+                        )
+                    ]
+                }
             )
-        )
+            for p in PRODUCTS
+        ]
+
         return ProductsCollection(
-            products=[tle_product],
+            products=[products],
             links=[
                 Link(
                     href=str(request.url_for(f"{self.NAME_PREFIX}:list-products")),
@@ -86,20 +108,26 @@ class StapiTleRouter(StapiRouter):
         )
 
     def product(self, product_id: str, request: Request) -> Product:
-        if product_id != tle_product.id:
+        try:
+            product = next(p.product for p in PRODUCTS if p.product.id == product_id)
+        except StopIteration:
             raise StapiException(status.HTTP_404_NOT_FOUND, "product not found")
-        tle_product.links.append(
-            Link(
-                href=str(
-                    request.url_for(
-                        f"{self.NAME_PREFIX}:get-product", product_id=tle_product.id
+        return product.model_copy(
+            update={
+                "links": [
+                    Link(
+                        href=str(
+                            request.url_for(
+                                f"{self.NAME_PREFIX}:get-product",
+                                product_id=product.id,
+                            )
+                        ),
+                        rel="self",
+                        type=TYPE_JSON,
                     )
-                ),
-                rel="self",
-                type=TYPE_JSON,
-            )
+                ]
+            }
         )
-        return tle_product
 
     # order endpoints, just throwing errors
     async def create_order(

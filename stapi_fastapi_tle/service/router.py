@@ -74,7 +74,7 @@ class StapiTleRouter(StapiRouter):
         return rv
 
     # product endpoints, these should be all just done in the StapiRouter class, here
-    # just done to show "look, no backend!"
+    # just done to show "look, no backend!" TODO
     def products(self, request: Request) -> ProductsCollection:
         products = [
             p.product.model_copy(

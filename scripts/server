@@ -12,5 +12,6 @@ Start the application including the backend.
 if [ "${1:-}" = "--help" ]; then
     usage
 else
+    export RELOAD=${RELOAD:-1}
     poetry run python3 -m stapi_fastapi_tle;
 fi

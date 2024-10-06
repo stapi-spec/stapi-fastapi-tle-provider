@@ -11,25 +11,42 @@ an code generator for this chore.
 """
 
 from dataclasses import dataclass
-from typing import Annotated, Literal, Type, Union
+from typing import Annotated, Generic, Literal, Type, Union
 
 from annotated_types import Ge, Le
-from geojson_pydantic import Feature, FeatureCollection, Polygon
-from geojson_pydantic.geometries import Geometry
-from pydantic import BaseModel
+from geojson_pydantic import Feature, FeatureCollection, Point, Polygon
+from geojson_pydantic.features import Geom
+from pydantic import BaseModel, ConfigDict
 from stapi_fastapi.models.product import Product
 from stapi_fastapi.types.datetime_interval import DatetimeInterval
 from stapi_fastapi.types.filter import CQL2Filter
 
 
-# Step 0a: define some mixins, should be moved to `stapi_fastapi`
+# Step 0a: define some mixins, should be moved to `stapi_fastapi` TODO
 class OpportunityPropertiesMixin(BaseModel):
     datetime: DatetimeInterval
 
 
-class OpportunityRequestMixin(BaseModel):
-    geometry: Geometry
+class OpportunityRequestGenericMixin(BaseModel):
+    """
+    base mixin allowing additional attributes for when no explicit OpenAPI is
+    desired (maybe that shouldn't be a thing, but expect implementors to do the
+    models? TODO).
+    """
+
     filter: CQL2Filter | None = None
+
+    model_config = ConfigDict(extra="allow")
+
+
+class OpportunityRequestMixin(OpportunityRequestGenericMixin, Generic[Geom]):
+    """
+    base requiring being explicit.
+    """
+
+    geometry: Geom
+
+    model_config = ConfigDict(extra="forbid")
 
 
 # Step 0b: define a helper container to keep things tidy
@@ -60,13 +77,13 @@ class Product1OpportunityProperties(Product1Parameters, OpportunityPropertiesMix
 # Step 2b: Define opportunity request model for each product parameter model; and their
 # union
 class Product0OpportunityRequest(
-    Product0OpportunityProperties, OpportunityRequestMixin
+    Product0OpportunityProperties, OpportunityRequestMixin[Point]
 ):
     """"""
 
 
 class Product1OpportunityRequest(
-    Product1OpportunityProperties, OpportunityRequestMixin
+    Product1OpportunityProperties, OpportunityRequestMixin[Point]
 ):
     """"""
 
